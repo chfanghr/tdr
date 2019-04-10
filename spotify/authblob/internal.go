@@ -17,7 +17,7 @@ import (
 )
 
 func decodeBlob(blob64 string, client64 string, keys crypto.PrivateKeys) (string, error) {
-	if data, err := UnwrapResult(func() {
+	if data, err := UnwrapResultFromJob(func() {
 		clientKey, err := base64.StdEncoding.DecodeString(client64)
 		ThrowIfError(err)
 		blobBytes, err := base64.StdEncoding.DecodeString(blob64)

@@ -1,6 +1,9 @@
 package utils
 
-import "fmt"
+import (
+	"fmt"
+	"reflect"
+)
 
 type Result struct {
 	Err  error
@@ -8,8 +11,6 @@ type Result struct {
 }
 
 var InvalidResult = Result{Err: fmt.Errorf("invalid result ")}
-
-func (r Result) IsError() bool { return r.Err != nil }
 
 func ThrowIfError(err error) {
 	if err != nil {
@@ -25,9 +26,9 @@ func ThrowResult(res Result) {
 	panic(res)
 }
 
-func UnwrapResult(job func()) (interface{}, error) {
+func UnwrapResultFromJob(job func()) (interface{}, error) {
 	chRes := make(chan Result)
-	func() {
+	go func() {
 		defer func() {
 			if res := recover(); res == nil {
 				chRes <- InvalidResult
@@ -40,5 +41,20 @@ func UnwrapResult(job func()) (interface{}, error) {
 		job()
 	}()
 	res := <-chRes
+	return UnwrapResult(res)
+}
+
+func UnwrapResult(res Result) (interface{}, error) {
 	return res.Data, res.Err
 }
+
+func AsyncDo(job func()) <-chan Result {
+	chRes := make(chan Result)
+	go func() {
+		data, err := UnwrapResultFromJob(job)
+		chRes <- Result{Err: err, Data: data}
+	}()
+	return chRes
+}
+
+func IsSameError(a, b error) bool { return reflect.DeepEqual(a, b) }

@@ -22,6 +22,6 @@ func getAP() {
 }
 
 func GetAP() (string, error) {
-	data, err := UnwrapResult(getAP)
+	data, err := UnwrapResultFromJob(getAP)
 	return data.(string), err
 }

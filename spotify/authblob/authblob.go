@@ -15,7 +15,7 @@ type AuthBlob struct {
 }
 
 func FromFile(path string) (*AuthBlob, error) {
-	if data, err := UnwrapResult(func() {
+	if data, err := UnwrapResultFromJob(func() {
 		buf, err := ioutil.ReadFile(path)
 		ThrowIfError(err)
 		tmp := &AuthBlob{}
@@ -29,7 +29,7 @@ func FromFile(path string) (*AuthBlob, error) {
 }
 
 func NewAuthBlob(blob64 string, client64 string, keys crypto.PrivateKeys, deviceId string, username string) (*AuthBlob, error) {
-	if data, err := UnwrapResult(func() {
+	if data, err := UnwrapResultFromJob(func() {
 		partDecoded, err := decodeBlob(blob64, client64, keys)
 		ThrowIfError(err)
 		fullDecoded := decodeBlobSecondary(partDecoded, username,
@@ -46,7 +46,7 @@ func NewAuthBlob(blob64 string, client64 string, keys crypto.PrivateKeys, device
 }
 
 func ToFile(path string, ab *AuthBlob) error {
-	_, err := UnwrapResult(func() {
+	_, err := UnwrapResultFromJob(func() {
 		buf, err := json.Marshal(ab)
 		ThrowIfError(err)
 		err = ioutil.WriteFile(path, buf, 0600)
@@ -56,7 +56,7 @@ func ToFile(path string, ab *AuthBlob) error {
 }
 
 func (b *AuthBlob) MakeSpotBlob(deviceId string, client64 string, dhKeys crypto.PrivateKeys) (string, error) {
-	if data, err := UnwrapResult(func() {
+	if data, err := UnwrapResultFromJob(func() {
 		secret := sha1.Sum([]byte(deviceId))
 		key := blobKey(b.Username, secret[:])
 		blobBytes, err := base64.StdEncoding.DecodeString(b.DecodedBlob)
