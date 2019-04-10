@@ -1,2 +1,7 @@
+github.com/chfanghr/trackDownloader v0.0.1-beta.2 h1:5PxDi8Em+iLO/jsESIh48vOwikjyupM6lfDsp6b1Y1M=
+github.com/chfanghr/trackDownloader v0.0.1-beta.2/go.mod h1:gvuYmzlHJqJxeeo9S6VR47rqZQrzESo58NzCNVuR8tA=
 github.com/golang/protobuf v1.3.1 h1:YF8+flBXS5eO826T4nzqPrxfhQThhXl0YzfuUPu4SBg=
 github.com/golang/protobuf v1.3.1/go.mod h1:6lQm79b+lXiMfvg/cZm0SGofjICqVBUtrP5yJMmIC1U=
+golang.org/x/crypto v0.0.0-20190404164418-38d8ce5564a5 h1:bselrhR0Or1vomJZC8ZIjWtbDmn9OYFLX5Ik9alpJpE=
+golang.org/x/crypto v0.0.0-20190404164418-38d8ce5564a5/go.mod h1:WFFai1msRO1wXaEeE5yQxYXgSfI8pQAWXbQop6sCtWE=
+golang.org/x/sys v0.0.0-20190403152447-81d4e9dc473e/go.mod h1:h1NjWce9XRLGQEsW7wpKNCjG9DtNlClVuFLEZdDNbEs=
