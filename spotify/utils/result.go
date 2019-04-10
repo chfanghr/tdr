@@ -26,7 +26,7 @@ func ThrowResult(res Result) {
 	panic(res)
 }
 
-func UnwrapResultFromJob(job func()) (interface{}, error) {
+func ResultFromJob(job func()) Result {
 	chRes := make(chan Result)
 	go func() {
 		defer func() {
@@ -40,8 +40,11 @@ func UnwrapResultFromJob(job func()) (interface{}, error) {
 		}()
 		job()
 	}()
-	res := <-chRes
-	return UnwrapResult(res)
+	return <-chRes
+}
+
+func UnwrapResultFromJob(job func()) (interface{}, error) {
+	return UnwrapResult(ResultFromJob(job))
 }
 
 func UnwrapResult(res Result) (interface{}, error) {

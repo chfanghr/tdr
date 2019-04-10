@@ -3,7 +3,8 @@ package crypto
 import (
 	"bytes"
 	"encoding/binary"
-	"github.com/chfanghr/trackDownloader/librespot/connection"
+	"github.com/chfanghr/tdr/spotify/connection"
+	. "github.com/chfanghr/tdr/spotify/utils"
 	"io"
 	"log"
 	"sync"
@@ -131,27 +132,28 @@ func (s *shannonStream) finishRecv() {
 }
 
 func (s *shannonStream) RecvPacket() (cmd uint8, buf []byte, err error) {
-	err = binary.Read(s, binary.BigEndian, &cmd)
-	if err != nil {
-		return
+	type res struct {
+		cmd uint8
+		buf []byte
 	}
-
-	var size uint16
-	err = binary.Read(s, binary.BigEndian, &size)
-	if err != nil {
-		return
-	}
-
-	if size > 0 {
-		buf = make([]byte, size)
-		_, err = io.ReadFull(s.reader, buf)
-		if err != nil {
-			return
+	if data, resErr := UnwrapResultFromJob(func() {
+		var cmd uint8
+		ThrowIfError(binary.Read(s, binary.BigEndian, &cmd))
+		var size uint16
+		ThrowIfError(binary.Read(s, binary.BigEndian, &size))
+		if size > 0 {
+			buf = make([]byte, size)
+			_, err = io.ReadFull(s.reader, buf)
+			ThrowIfError(err)
+			buf = s.Decrypt(buf)
 		}
-		buf = s.Decrypt(buf)
-
+		s.finishRecv()
+		ThrowData(res{cmd, buf})
+	}); resErr != nil {
+		err = resErr
+		return
+	} else {
+		r := data.(res)
+		return r.cmd, r.buf, nil
 	}
-	s.finishRecv()
-
-	return cmd, buf, err
 }
