@@ -59,6 +59,7 @@ func LoginSaved(username string, authData []byte, deviceName string) (*Session, 
 	}
 }
 
+//TODO
 // Registers as a Spotify Connect device via mdns. When user connects, logs on to Spotify and saves
 // credentials in file at cacheBlobPath. Once saved, the blob credentials allow the program to connect to other
 // Spotify Connect devices and control them.
@@ -68,6 +69,7 @@ func LoginSaved(username string, authData []byte, deviceName string) (*Session, 
 //	return sessionFromDiscovery(disc)
 //}
 
+//TODO
 // Login using an authentication blob through Spotify Connect discovery system, reading an existing blob data. To read
 // from a file, see LoginDiscoveryBlobFile.
 //func LoginDiscoveryBlob(username string, blob string, deviceName string) (*Session, error) {
@@ -79,6 +81,7 @@ func LoginSaved(username string, authData []byte, deviceName string) (*Session, 
 //	return sessionFromDiscovery(disc)
 //}
 
+//TODO
 // Login from credentials at cacheBlobPath previously saved by LoginDiscovery. Similar to LoginDiscoveryBlob, except
 // it reads it directly from a file.
 //func LoginDiscoveryBlobFile(cacheBlobPath, deviceName string) (*Session, error) {

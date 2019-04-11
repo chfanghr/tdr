@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"github.com/chfanghr/tdr/spotify/connection"
 	"github.com/chfanghr/tdr/spotify/crypto"
+	"github.com/chfanghr/tdr/spotify/discovery"
+	"github.com/chfanghr/tdr/spotify/mercury"
+	"github.com/chfanghr/tdr/spotify/player"
 	spot "github.com/chfanghr/tdr/spotify/proto"
 	. "github.com/chfanghr/tdr/spotify/utils"
 	"github.com/golang/protobuf/proto"
@@ -18,9 +21,8 @@ import (
 type Session struct {
 	/// Constructor references
 
-	//TODO
 	// mercuryConstructor is the constructor that should be used to build a mercury connection
-	//mercuryConstructor func(conn connection.PacketStream) *mercury.Client
+	mercuryConstructor func(conn connection.PacketStream) *mercury.Client
 
 	// shannonConstructor is the constructor used to build the shannon-encrypted PacketStream connection
 	shannonConstructor func(keys crypto.SharedKeys, conn connection.PlainConnection) connection.PacketStream
@@ -29,33 +31,36 @@ type Session struct {
 	// stream is the encrypted connection to the Spotify server
 	stream connection.PacketStream
 
-	//TODO
 	// mercury is the mercury client associated with this session
-	//mercury *mercury.Client
+	mercury *mercury.Client
 
-	//TODO
 	// discovery is the discovery service used for Spotify Connect devices discovery
-	//discovery *discovery.Discovery
+	discovery *discovery.Discovery
 
-	//TODO
 	// player is the player service used to load the audio data
-	//player *player.Player
+	player *player.Player
 
 	// tcpCon is the plain I/O network connection to the server
 	tcpCon io.ReadWriter
+
 	// keys are the encryption keys used to communicate with the server
 	keys crypto.PrivateKeys
 
 	/// State and variables
+
 	// deviceId is the device identifier (computer name, Android serial number, ...) sent during auth to the Spotify
 	// servers for this session
 	deviceId string
+
 	// deviceName is the device name (Android device model) sent during auth to the Spotify servers for this session
 	deviceName string
+
 	// username is the currently authenticated canonical username
 	username string
+
 	// reusableAuthBlob is the reusable authentication blob for Spotify Connect devices
 	reusableAuthBlob []byte
+
 	// country is the user country returned by the Spotify servers
 	country string
 }
@@ -64,22 +69,17 @@ func (s *Session) Stream() connection.PacketStream {
 	return s.stream
 }
 
-//TODO
-//func (s *Session) Discovery() *discovery.Discovery {
-//	return s.discovery
-//}
-//
+func (s *Session) Discovery() *discovery.Discovery {
+	return s.discovery
+}
 
-//TODO
-//func (s *Session) Mercury() *mercury.Client {
-//	return s.mercury
-//}
-//
+func (s *Session) Mercury() *mercury.Client {
+	return s.mercury
+}
 
-//TODO
-//func (s *Session) Player() *player.Player {
-//	return s.player
-//}
+func (s *Session) Player() *player.Player {
+	return s.player
+}
 
 func (s *Session) Username() string {
 	return s.username
@@ -98,72 +98,54 @@ func (s *Session) Country() string {
 }
 
 func (s *Session) startConnection() error {
-	// First, start by performing a plaintext connection and send the Hello message
-	conn := connection.MakePlainConnection(s.tcpCon, s.tcpCon)
+	return ResultFromJob(func() {
+		// First, start by performing a plaintext connection and send the Hello message
+		conn := connection.MakePlainConnection(s.tcpCon, s.tcpCon)
+		helloMessage := makeHelloMessage(s.keys.PubKey(), s.keys.ClientNonce())
+		initClientPacket, err := conn.SendPrefixPacket([]byte{0, 4}, helloMessage)
+		WrapAndThrowIfError("failed to write client hello", err)
 
-	helloMessage := makeHelloMessage(s.keys.PubKey(), s.keys.ClientNonce())
-	initClientPacket, err := conn.SendPrefixPacket([]byte{0, 4}, helloMessage)
-	if err != nil {
-		log.Fatal("Error writing client hello", err)
-		return err
-	}
+		// Wait and read the hello reply
+		initServerPacket, err := conn.RecvPacket()
+		WrapAndThrowIfError("failed to receive packet for hello: ", err)
 
-	// Wait and read the hello reply
-	initServerPacket, err := conn.RecvPacket()
-	if err != nil {
-		log.Fatal("Error receving packet for hello: ", err)
-		return err
-	}
+		response := spot.APResponseMessage{}
+		err = proto.Unmarshal(initServerPacket[4:], &response)
+		WrapAndThrowIfError("failed to unmarshal server hello", err)
 
-	response := spot.APResponseMessage{}
-	err = proto.Unmarshal(initServerPacket[4:], &response)
-	if err != nil {
-		log.Fatal("Failed to unmarshal server hello", err)
-		return err
-	}
+		remoteKey := response.Challenge.LoginCryptoChallenge.DiffieHellman.Gs
+		sharedKeys := s.keys.AddRemoteKey(remoteKey, initClientPacket, initServerPacket)
 
-	remoteKey := response.Challenge.LoginCryptoChallenge.DiffieHellman.Gs
-	sharedKeys := s.keys.AddRemoteKey(remoteKey, initClientPacket, initServerPacket)
-
-	plainResponse := &spot.ClientResponsePlaintext{
-		LoginCryptoResponse: &spot.LoginCryptoResponseUnion{
-			DiffieHellman: &spot.LoginCryptoDiffieHellmanResponse{
-				Hmac: sharedKeys.Challenge(),
+		plainResponse := &spot.ClientResponsePlaintext{
+			LoginCryptoResponse: &spot.LoginCryptoResponseUnion{
+				DiffieHellman: &spot.LoginCryptoDiffieHellmanResponse{
+					Hmac: sharedKeys.Challenge(),
+				},
 			},
-		},
-		PowResponse:    &spot.PoWResponseUnion{},
-		CryptoResponse: &spot.CryptoResponseUnion{},
-	}
+			PowResponse:    &spot.PoWResponseUnion{},
+			CryptoResponse: &spot.CryptoResponseUnion{},
+		}
 
-	plainResponseMessage, err := proto.Marshal(plainResponse)
-	if err != nil {
-		log.Fatal("marshaling error: ", err)
-		return err
-	}
+		plainResponseMessage, err := proto.Marshal(plainResponse)
+		ThrowIfError(err)
 
-	_, err = conn.SendPrefixPacket([]byte{}, plainResponseMessage)
-	if err != nil {
-		log.Fatal("error writing client plain response ", err)
-		return err
-	}
+		_, err = conn.SendPrefixPacket([]byte{}, plainResponseMessage)
+		WrapAndThrowIfError("failed to write client plain response", err)
 
-	s.stream = s.shannonConstructor(sharedKeys, conn)
-	//s.mercury = s.mercuryConstructor(s.stream)
-	//
-	//s.player = player.CreatePlayer(s.stream, s.mercury)
+		s.stream = s.shannonConstructor(sharedKeys, conn)
+		s.mercury = s.mercuryConstructor(s.stream)
 
-	return nil
+		s.player = player.CreatePlayer(s.stream, s.mercury)
+	}).Err
 }
 
 func setupSession() (*Session, error) {
 	session := &Session{
-		keys: crypto.GenerateKeys(),
-		//mercuryConstructor: mercury.CreateMercury,
+		keys:               crypto.GenerateKeys(),
+		mercuryConstructor: mercury.CreateMercury,
 		shannonConstructor: crypto.CreateStream,
 	}
-	err := session.doConnect()
-
-	return session, err
+	return session, session.doConnect()
 }
 
 //TODO

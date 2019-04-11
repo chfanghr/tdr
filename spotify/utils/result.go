@@ -41,6 +41,8 @@ func ThrowData(data interface{}) {
 	panic(Result{Data: data})
 }
 
+func ThrowEmptyResult() { ThrowResult(EmptyResult) }
+
 func ThrowResult(res Result) {
 	panic(res)
 }
