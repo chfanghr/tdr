@@ -10,10 +10,8 @@ import (
 	. "github.com/chfanghr/tdr/spotify/utils"
 	"github.com/golang/protobuf/proto"
 	"log"
+	"strings"
 )
-
-var Version string
-var BuildID string
 
 func Login(username string, password string, deviceName string) (*Session, error) {
 	if data, err := UnwrapResultFromJob(func() {
@@ -132,6 +130,7 @@ func (s *Session) doLogin(packet []byte, username string) error {
 	s.username = welcome.GetCanonicalUsername()
 	if s.username == "" {
 		// Spotify might not return a canonical username, so reuse the blob's one instead
+		//TODO
 		//s.username = s.discovery.LoginBlob().Username
 	}
 	s.reusableAuthBlob = welcome.GetReusableAuthCredentials()
