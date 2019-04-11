@@ -5,6 +5,7 @@ jobs:
       - image: circleci/golang:1.12
     steps:
       - checkout
+      - run: GO111MODULE=on go build -v ./...
       - run: GO111MODULE=on go test ./...
       - run: sudo chmod -R +x ./.circleci/*.sh
       - run: .circleci/build.sh .
