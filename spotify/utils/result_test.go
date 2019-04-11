@@ -48,17 +48,19 @@ func TestUnwrapResult(t *testing.T) {
 		want    interface{}
 		wantErr bool
 	}{
-		{"Throw Data", args{func() {
+		{"throw data", args{func() {
 			ThrowIfError(nil)
 			ThrowData("1")
 		}}, "1", false},
-		{"Throw Error", args{func() {
+		{"throw error", args{func() {
 			ThrowIfError(errors.New("error"))
 			ThrowData("1")
 		}}, nil, true},
-		{"Throw Result", args{func() {
+		{"throw result", args{func() {
 			ThrowResult(Result{Data: 1, Err: errors.New("error")})
 		}}, 1, true},
+		{"throw nothing", args{func() {
+		}}, nil, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

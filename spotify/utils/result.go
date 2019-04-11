@@ -10,11 +10,30 @@ type Result struct {
 	Data interface{}
 }
 
+func (r Result) HasError() bool { return r.Err == nil }
+
+func (r Result) HasData() bool { return r.Data == nil }
+
+func (r Result) Throw() { ThrowResult(r) }
+
+type ErrorWrapped struct {
+	error
+	AdditionalMessage string
+}
+
+func (e ErrorWrapped) Error() string {
+	return fmt.Sprintf("%s: %v", e.AdditionalMessage, e.error)
+}
+
+var EmptyResult = Result{}
+
 var InvalidResult = Result{Err: fmt.Errorf("invalid result ")}
+
+func ThrowError(err error) { panic(Result{Err: err}) }
 
 func ThrowIfError(err error) {
 	if err != nil {
-		panic(Result{Err: err})
+		ThrowError(err)
 	}
 }
 
@@ -31,7 +50,7 @@ func ResultFromJob(job func()) Result {
 	go func() {
 		defer func() {
 			if res := recover(); res == nil {
-				chRes <- InvalidResult
+				chRes <- EmptyResult
 			} else if result, ok := res.(Result); !ok {
 				chRes <- InvalidResult
 			} else {
@@ -61,3 +80,16 @@ func AsyncDo(job func()) <-chan Result {
 }
 
 func IsSameError(a, b error) bool { return reflect.DeepEqual(a, b) }
+
+func WrapError(msg string, ori error) error {
+	return ErrorWrapped{ori, msg}
+}
+
+func WrapAndThrowError(msg string, ori error) {
+	ThrowError(WrapError(msg, ori))
+}
+func WrapAndThrowIfError(msg string, ori error) {
+	if ori != nil {
+		ThrowError(WrapError(msg, ori))
+	}
+}

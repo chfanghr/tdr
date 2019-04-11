@@ -8,5 +8,5 @@ jobs:
       - run: GO111MODULE=on go test ./...
       - run: sudo chmod -R +x ./.circleci/*.sh
       - run: .circleci/build.sh .
-      - store_artifacts: 
+      - store_artifacts:
           path: /build
