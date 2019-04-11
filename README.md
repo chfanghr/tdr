@@ -7,5 +7,5 @@
 - [ ] user-friendly command line interface
 - [ ] add shell-like support
 
-## [latest build](circleci.com/api/v1.1/project/github/chfanghr/tdr/latest/artifacts?filter=successful)
+## [Latest Build](circleci.com/api/v1.1/project/github/chfanghr/tdr/latest/artifacts?filter=successful)
 Result of latest successful build, powered by Circle CI.
