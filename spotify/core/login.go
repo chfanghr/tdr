@@ -10,7 +10,6 @@ import (
 	. "github.com/chfanghr/tdr/spotify/utils"
 	"github.com/golang/protobuf/proto"
 	"log"
-	"strings"
 )
 
 func Login(username string, password string, deviceName string) (*Session, error) {
