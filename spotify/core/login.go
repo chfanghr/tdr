@@ -8,6 +8,7 @@ import (
 	"github.com/chfanghr/tdr/spotify/connection"
 	spot "github.com/chfanghr/tdr/spotify/proto"
 	. "github.com/chfanghr/tdr/spotify/utils"
+	"github.com/chfanghr/tdr/spotify/version"
 	"github.com/golang/protobuf/proto"
 	"log"
 )
@@ -128,6 +129,7 @@ func (s *Session) doLogin(packet []byte, username string) error {
 	// Store the few interesting values
 	s.username = welcome.GetCanonicalUsername()
 	if s.username == "" {
+		panic(nil)
 		// Spotify might not return a canonical username, so reuse the blob's one instead
 		//TODO
 		//s.username = s.discovery.LoginBlob().Username
@@ -182,7 +184,7 @@ func makeLoginPasswordPacket(username string, password string, deviceId string) 
 
 func makeLoginBlobPacket(username string, authData []byte, authType *spot.AuthenticationType, deviceId string) ([]byte, error) {
 	if data, err := UnwrapResultFromJob(func() {
-		versionString := fmt.Sprintf("tdr_core_%s_%s", Version, BuildID)
+		versionString := fmt.Sprintf("tdr_core_%s_%s", version.Version, version.BuildID)
 		packet := &spot.ClientResponseEncrypted{
 			LoginCredentials: &spot.LoginCredentials{
 				Username: proto.String(username),

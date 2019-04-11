@@ -64,17 +64,16 @@ func getOAuthToken(clientId string, clientSecret string) OAuth {
 	http.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
 		params := r.URL.Query()
 		auth, err := GetOauthAccessToken(params.Get("code"), "http://localhost:8888/callback", clientId, clientSecret)
-		//TODO
 		if err != nil {
-			//fmt.Fprintf(w, "Error getting token %q", err)
+			IgnoreError(fmt.Fprintf(w, "failed to get token %q", err))
+			w.WriteHeader(http.StatusServiceUnavailable)
 			return
 		}
-		//TODO
-		//fmt.Fprintf(w, "Got token, loggin in")
+		IgnoreError(fmt.Fprintf(w, "got token, loggin in"))
 		ch <- *auth
 	})
 
-	defer func() { ThrowIfError(listener.Close()) }()
+	defer func() { CrashProgramIfError("close listener", listener.Close()) }()
 	go func() { _ = http.Serve(listener, http.DefaultServeMux) }()
 
 	PrintOAuthMessage("go to this url")

@@ -10,9 +10,9 @@ import (
 	"github.com/chfanghr/tdr/spotify/player"
 	spot "github.com/chfanghr/tdr/spotify/proto"
 	. "github.com/chfanghr/tdr/spotify/utils"
+	"github.com/chfanghr/tdr/spotify/version"
 	"github.com/golang/protobuf/proto"
 	"io"
-	"log"
 	"net"
 	"time"
 )
@@ -227,15 +227,11 @@ func (s *Session) runPollLoop() {
 }
 
 func (s *Session) handle(cmd uint8, data []byte) {
-	//fmt.Printf("handle, cmd=0x%x data=%x\n", cmd, data)
-
+	version.Debug.Printf("handle, cmd=0x%x data=%x\n", cmd, data)
 	switch {
 	case cmd == connection.PacketPing:
 		// Ping
-		err := s.stream.SendPacket(connection.PacketPong, data)
-		if err != nil {
-			log.Fatal("Error handling PacketPing", err)
-		}
+		CrashProgramIfError("failed to handle PacketPing", s.stream.SendPacket(connection.PacketPong, data))
 
 	case cmd == connection.PacketPongAck:
 		// Pong reply, ignore
@@ -243,7 +239,7 @@ func (s *Session) handle(cmd uint8, data []byte) {
 	case cmd == connection.PacketAesKey || cmd == connection.PacketAesKeyError ||
 		cmd == connection.PacketStreamChunkRes:
 		// Audio key and data responses
-		_ = s.player.HandleCmd(cmd, data)
+		IgnoreError(nil, s.player.HandleCmd(cmd, data))
 
 	case cmd == connection.PacketCountryCode:
 		// Handle country code
@@ -251,7 +247,7 @@ func (s *Session) handle(cmd uint8, data []byte) {
 
 	case 0xb2 <= cmd && cmd <= 0xb6:
 		// Mercury responses
-		WrapAndThrowIfError("Handle 0xbx", s.mercury.Handle(cmd, bytes.NewReader(data))) //Shouldn't happen,just panic
+		WrapAndThrowIfError("handle 0xbx", s.mercury.Handle(cmd, bytes.NewReader(data))) //if error occurs,just panic
 
 	case cmd == connection.PacketSecretBlock:
 		// Old RSA public key
@@ -270,8 +266,7 @@ func (s *Session) handle(cmd uint8, data []byte) {
 		// is [ uint16 id (= 0x001), uint8 len, string license ]
 
 	default:
-		//TODO
-		//fmt.Printf("Unhandled cmd 0x%x\n", cmd)
+		version.Debug.Printf("unhandled cmd 0x%x\n", cmd)
 	}
 }
 
@@ -322,6 +317,6 @@ func makeHelloMessage(publicKey []byte, nonce []byte) []byte {
 		Padding: []byte{0x1e},
 	}
 	packetData, err := proto.Marshal(hello)
-	WrapAndThrowIfError("login marshaling failed", err)
+	CrashProgramIfError("login marshaling failed", err)
 	return packetData
 }

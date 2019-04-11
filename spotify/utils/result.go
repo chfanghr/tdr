@@ -2,6 +2,7 @@ package utils
 
 import (
 	"fmt"
+	"log"
 	"reflect"
 )
 
@@ -95,3 +96,15 @@ func WrapAndThrowIfError(msg string, ori error) {
 		ThrowError(WrapError(msg, ori))
 	}
 }
+
+func IgnoreError(data interface{}, _ error) interface{} {
+	return data
+}
+
+func CrashProgramIfError(msg string, err error) {
+	if err != nil {
+		log.Fatalf("%s: %v\n", msg, err)
+	}
+}
+
+func CrashProgram(msg string) {log.Fatalf("%s\n", msg)}

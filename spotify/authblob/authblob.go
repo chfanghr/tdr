@@ -14,6 +14,18 @@ type AuthBlob struct {
 	DecodedBlob string `json:"decoded_blob"`
 }
 
+func FromBytes(buf []byte) (*AuthBlob, error) {
+	if data, err := UnwrapResultFromJob(func() {
+		tmp := &AuthBlob{}
+		ThrowIfError(json.Unmarshal(buf, tmp))
+		ThrowData(tmp)
+	}); err != nil {
+		return nil, err
+	} else {
+		return data.(*AuthBlob), nil
+	}
+}
+
 func FromFile(path string) (*AuthBlob, error) {
 	if data, err := UnwrapResultFromJob(func() {
 		buf, err := ioutil.ReadFile(path)
@@ -73,4 +85,8 @@ func (a *AuthBlob) MakeSpotBlob(deviceId string, client64 string, dhKeys crypto.
 
 func (a *AuthBlob) SaveTo(path string) error {
 	return ToFile(path, a)
+}
+
+func (a *AuthBlob) Bytes() ([]byte, error) {
+	return json.Marshal(a)
 }
