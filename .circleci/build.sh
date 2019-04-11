@@ -19,3 +19,5 @@ go_build_target "darwin" "386" $1
 
 #tar -cf /tmp/build.tar /build
 #mv /tmp/build.tar /build
+
+for i in /build/windows*;do mv $i $i.exe;done
