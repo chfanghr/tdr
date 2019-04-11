@@ -6,7 +6,7 @@ import (
 	"fmt"
 	. "github.com/chfanghr/tdr/spotify/utils"
 	"io/ioutil"
-	"log"
+	"net"
 	"net/http"
 	"net/url"
 )
@@ -16,6 +16,10 @@ type OAuth struct {
 	RefreshToken string `json:"refresh_token"`
 	Scope        string `json:"scope"`
 	Error        string
+}
+
+var PrintOAuthMessage = func(msg string) {
+	fmt.Println(msg)
 }
 
 func GetOauthAccessToken(code string, redirectUri string, clientId string, clientSecret string) (*OAuth, error) {
@@ -54,13 +58,8 @@ func GetOauthAccessToken(code string, redirectUri string, clientId string, clien
 func getOAuthToken(clientId string, clientSecret string) OAuth {
 	ch := make(chan OAuth)
 
-	fmt.Println("go to this url")
-	urlPath := "https://accounts.spotify.com/authorize?" +
-		"client_id=" + clientId +
-		"&response_type=code" +
-		"&redirect_uri=http://localhost:8888/callback" +
-		"&scope=streaming"
-	fmt.Println(urlPath)
+	listener, err := net.Listen("tcp", "0.0.0.0:8888")
+	ThrowIfError(err)
 
 	http.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
 		params := r.URL.Query()
@@ -70,13 +69,21 @@ func getOAuthToken(clientId string, clientSecret string) OAuth {
 			//fmt.Fprintf(w, "Error getting token %q", err)
 			return
 		}
+		//TODO
 		//fmt.Fprintf(w, "Got token, loggin in")
 		ch <- *auth
 	})
 
-	go func() {
-		log.Fatal(http.ListenAndServe(":8888", nil))
-	}()
+	defer func() { ThrowIfError(listener.Close()) }()
+	go func() { _ = http.Serve(listener, http.DefaultServeMux) }()
+
+	PrintOAuthMessage("go to this url")
+	urlPath := "https://accounts.spotify.com/authorize?" +
+		"client_id=" + clientId +
+		"&response_type=code" +
+		"&redirect_uri=http://localhost:8888/callback" +
+		"&scope=streaming"
+	PrintOAuthMessage(urlPath)
 
 	return <-ch
 }

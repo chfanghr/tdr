@@ -243,8 +243,7 @@ func (s *Session) handle(cmd uint8, data []byte) {
 	case cmd == connection.PacketAesKey || cmd == connection.PacketAesKeyError ||
 		cmd == connection.PacketStreamChunkRes:
 		// Audio key and data responses
-		//TODO
-		//s.player.HandleCmd(cmd, data)
+		_ = s.player.HandleCmd(cmd, data)
 
 	case cmd == connection.PacketCountryCode:
 		// Handle country code
@@ -252,11 +251,7 @@ func (s *Session) handle(cmd uint8, data []byte) {
 
 	case 0xb2 <= cmd && cmd <= 0xb6:
 		// Mercury responses
-		//TODO
-		//err := s.mercury.Handle(cmd, bytes.NewReader(data))
-		//if err != nil {
-		//	log.Fatal("Handle 0xbx", err)
-		//}
+		WrapAndThrowIfError("Handle 0xbx", s.mercury.Handle(cmd, bytes.NewReader(data))) //Shouldn't happen,just panic
 
 	case cmd == connection.PacketSecretBlock:
 		// Old RSA public key
@@ -275,7 +270,8 @@ func (s *Session) handle(cmd uint8, data []byte) {
 		// is [ uint16 id (= 0x001), uint8 len, string license ]
 
 	default:
-		fmt.Printf("Unhandled cmd 0x%x\n", cmd)
+		//TODO
+		//fmt.Printf("Unhandled cmd 0x%x\n", cmd)
 	}
 }
 

@@ -9,3 +9,5 @@ import (
 type Player struct{}
 
 func CreatePlayer(connection.PacketStream, *mercury.Client) *Player { ThrowEmptyResult(); return nil } //TODO
+
+func (p *Player) HandleCmd(cmd uint8, data []byte) error { return nil } //TODO
