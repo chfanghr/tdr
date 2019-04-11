@@ -17,5 +17,5 @@ go_build_target "windows" "386" $1
 go_build_target "darwin" "amd64" $1
 go_build_target "darwin" "386" $1
 
-tar -cf /tmp/build.tar /build
-mv /tmp/build.tar /build
+#tar -cf /tmp/build.tar /build
+#mv /tmp/build.tar /build
